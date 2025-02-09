@@ -1,10 +1,14 @@
+import os
 import discord
 from discord.ext import commands, tasks
 import asyncio
+from dotenv import load_dotenv
 
-TOKEN = "MTMzNzkzMTY3NDgwOTUzNjU1Mg.GcOlA5.01v8KdAKC5sSeM7tq8NomdEecfO4Ruw3AxJWMA"  # Replace with your bot token
-GUILD_ID = 1337908588433117296  # Replace with your Discord server ID
-ANNOUNCEMENT_CHANNEL_ID = 1337933756434223137  # Replace with the channel where session requests will be announced
+# Load environment variables from .env file
+load_dotenv()
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # Secure bot token
+GUILD_ID = int(os.getenv("GUILD_ID"))  # Secure Guild ID
+ANNOUNCEMENT_CHANNEL_ID = int(os.getenv("ANNOUNCEMENT_CHANNEL_ID"))  # Secure Channel ID
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 scheduled_sessions = {}
@@ -43,10 +47,14 @@ async def schedule(ctx, time: str, duration: int, max_participants: int):
 async def on_reaction_add(reaction, user):
     """Handle user reactions to register for a session."""
     try:
-        if user.bot or reaction.message.id not in scheduled_sessions:
+        if user.bot:
+            return
+        
+        message = await reaction.message.channel.fetch_message(reaction.message.id)  # Ensure message is fetched
+        if message.id not in scheduled_sessions:
             return
 
-        session = scheduled_sessions[reaction.message.id]
+        session = scheduled_sessions[message.id]
         if len(session["participants"]) >= session["max_participants"]:
             await reaction.message.channel.send(f"⚠️ {user.mention}, this session is full!")
             return

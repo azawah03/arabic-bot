@@ -10,7 +10,13 @@ TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # Secure bot token
 GUILD_ID = int(os.getenv("GUILD_ID"))  # Secure Guild ID
 ANNOUNCEMENT_CHANNEL_ID = int(os.getenv("ANNOUNCEMENT_CHANNEL_ID"))  # Secure Channel ID
 
-bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+# Define only necessary intents
+intents = discord.Intents.default()
+intents.message_content = True  # Required for message-based commands
+intents.reactions = True  # Required for reaction-based interactions
+intents.members = True  # Required for handling members in voice channels
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 scheduled_sessions = {}
 
 @bot.event

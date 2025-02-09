@@ -35,9 +35,8 @@ def run_web():
 # Start Flask in a separate thread
 threading.Thread(target=run_web).start()
 
-# Ensure database directory exists
-DB_PATH = "/data/sessions.db"  # Persistent database location
-os.makedirs("/data", exist_ok=True)
+# Store database in current directory instead of /data/
+DB_PATH = "sessions.db"  # Changed from /data/sessions.db
 
 # Initialize database
 conn = sqlite3.connect(DB_PATH)

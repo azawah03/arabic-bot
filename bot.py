@@ -3,6 +3,8 @@ import discord
 from discord.ext import commands, tasks
 import asyncio
 from dotenv import load_dotenv
+from flask import Flask
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +20,19 @@ intents.members = True  # Required for handling members in voice channels
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduled_sessions = {}
+
+# Flask server to keep Render from shutting down
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_web():
+    app.run(host="0.0.0.0", port=8080)
+
+# Start Flask in a separate thread
+threading.Thread(target=run_web).start()
 
 @bot.event
 async def on_ready():

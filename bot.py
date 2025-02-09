@@ -35,8 +35,12 @@ def run_web():
 # Start Flask in a separate thread
 threading.Thread(target=run_web).start()
 
+# Ensure database directory exists
+DB_PATH = "/data/sessions.db"  # Persistent database location
+os.makedirs("/data", exist_ok=True)
+
 # Initialize database
-conn = sqlite3.connect("sessions.db")
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -82,7 +86,7 @@ async def schedule(ctx, date: str, time: str, duration: int, max_participants: i
         )
         await message.add_reaction("✅")
 
-        conn = sqlite3.connect("sessions.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("INSERT INTO sessions (message_id, creator_id, date, time, duration, max_participants) VALUES (?, ?, ?, ?, ?, ?)",
                        (message.id, ctx.author.id, date, time, duration, max_participants))
@@ -95,7 +99,7 @@ async def schedule(ctx, date: str, time: str, duration: int, max_participants: i
 async def cancel_session(ctx, message_id: int):
     """Cancel a study session if the requester is the creator."""
     try:
-        conn = sqlite3.connect("sessions.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT creator_id FROM sessions WHERE message_id = ?", (message_id,))
         session = cursor.fetchone()
@@ -122,7 +126,7 @@ async def cancel_session(ctx, message_id: int):
 @bot.command()
 async def list_sessions(ctx):
     """List all scheduled study sessions."""
-    conn = sqlite3.connect("sessions.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT id, date, time, duration, max_participants FROM sessions")
     sessions = cursor.fetchall()

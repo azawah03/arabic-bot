@@ -68,9 +68,13 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
-async def schedule(ctx, date: str, time: str, duration: int, max_participants: int):
+async def schedule(ctx, date: str = None, time: str = None, duration: int = None, max_participants: int = None):
     """Schedule a new study session and store it in the database."""
     try:
+        if not date or not time or duration is None or max_participants is None:
+            await ctx.send("❌ Usage: `!schedule <date YYYY-MM-DD> <time HH:MM> <duration (minutes)> <max participants>`")
+            return
+
         announcement_channel = bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
         if not announcement_channel:
             await ctx.send("Error: Announcement channel not found!")

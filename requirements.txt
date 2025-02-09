@@ -1,4 +1,5 @@
 discord.py==2.3.2
 python-dotenv
-asyncio
 flask
+sqlite3
+asyncio

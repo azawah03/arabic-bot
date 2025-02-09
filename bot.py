@@ -5,6 +5,7 @@ import asyncio
 from dotenv import load_dotenv
 from flask import Flask
 import threading
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,6 +21,7 @@ intents.members = True  # Required for handling members in voice channels
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduled_sessions = {}
+session_counter = 1  # Track session numbers
 
 # Flask server to keep Render from shutting down
 app = Flask(__name__)
@@ -39,16 +41,21 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
-async def schedule(ctx, time: str, duration: int, max_participants: int):
+async def schedule(ctx, date: str, time: str, duration: int, max_participants: int):
     """Schedule a new study session."""
+    global session_counter
     try:
         announcement_channel = bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
         if not announcement_channel:
             await ctx.send("Error: Announcement channel not found!")
             return
 
+        session_id = session_counter
+        session_counter += 1
+
         message = await announcement_channel.send(
-            f'📅 **New Study Session Scheduled!** 📅\n'
+            f'📅 **Study Session #{session_id} Scheduled!** 📅\n'
+            f'📆 **Date:** {date}\n'
             f'🕒 **Time:** {time}\n'
             f'⏳ **Duration:** {duration} minutes\n'
             f'👥 **Max Participants:** {max_participants}\n'
@@ -56,6 +63,8 @@ async def schedule(ctx, time: str, duration: int, max_participants: int):
         )
         await message.add_reaction("✅")
         scheduled_sessions[message.id] = {
+            "id": session_id,
+            "date": date,
             "time": time,
             "duration": duration,
             "max_participants": max_participants,
@@ -81,7 +90,7 @@ async def on_reaction_add(reaction, user):
             return
 
         session["participants"].append(user.id)
-        await reaction.message.channel.send(f"✅ {user.mention} has joined the session!")
+        await reaction.message.channel.send(f"✅ {user.mention} has joined Study Session #{session['id']}!")
     except Exception as e:
         print(f"Error handling reaction: {e}")
 
@@ -104,14 +113,14 @@ async def start_session(ctx, message_id: int):
                 overwrites[member] = discord.PermissionOverwrite(view_channel=True, connect=True)
 
         voice_channel = await guild.create_voice_channel(
-            name=f"Study Session {message_id}",
+            name=f"Study Session #{session['id']}",
             overwrites=overwrites,
             category=None
         )
         session["voice_channel"] = voice_channel.id
         await ctx.send(f"✅ Voice channel created: {voice_channel.mention}")
 
-        # Start monitoring for empty channel
+        # Monitor for empty channel only after someone joins
         monitor_voice_channel.start(voice_channel.id)
     except Exception as e:
         await ctx.send(f"Error starting session: {e}")
